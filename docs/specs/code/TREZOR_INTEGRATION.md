@@ -1,15 +1,185 @@
 # Abstract
-
-Briefly describe the proposal
+An user would be able to use a Trezor Hardware Wallet with Yoroi.
 
 # Motivation
-
-Why you think the proposal is necessary
+1. Improved security by using an external hardware.
+2. No need to remember spending passowrd.
 
 # Background
 
-Background information related to the proposal (current implementation, rationale for the implementation you will propose)
-
 # Proposal
+User will be able to:
+1. Setup a new Yoroi Wallet without exposing its private key/ mnemonics in a computer.
+2. Send ADA using the Trezor Wallet Security.
 
-What you propose should be done
+# Iteration-1
+
+## Prerequisite
+1. Trezor Model T - Version 2.0.8 or later. (Support for Trezor One is supposed to come by mid-next year according to some information in Reddit).
+2. Initial configuration of the Trezor should have been already done.
+
+## Trezor Integrated Wallet Creation
+1. Install or update to a supported version of Yoroi.
+2. Select Connect to Trezor Hardware Wallet in the main Yoroi page - where Restore Wallet and Create Wallet also appears -.
+4. Connect the Trezor device to the computer and follow the steps to export the master public key for a Cardano Wallet.
+5. By default, Yoroi will use the Trezor device name as the wallet name, but it can be modified by the user.
+
+## Send ADA using Trezor
+1. Go to the Send Tab as usual, fill with the receiver's address and desire amount.
+2. Press NEXT button and select option to sign transaction.
+3. Approve the transaction on the Trezor device.
+
+## Low Level Implementation Design
+
+### Trezor Integrated Wallet Creation
+* For a Yoroi Wallet, we need to create: `adaWallet` and `cryptoAccount` objects.<br/>
+`adaWallet`     = no change on how we were using it before  
+`cryptoAccount` = we need to create it manually, because to create it with rust-cardano we would need the master private key, which we don’t have. This object is created in the following way:
+```
+const cryptoAccount = {
+  root_cached_key: 'master public key',
+  derivation_scheme: 'V2',
+  account: 0 // we currently only support one account in Yoroi.
+};
+```
+
+* `localStorage` changes
+
+Before:    
+```
+ACCOUNT = {
+"account": 0,
+"root_cached_key": "master public key",
+"derivation_scheme": "V2"
+}
+```
+```
+LAST_BLOCK_NUMBER = "last_block_number"
+```
+```
+WALLET = {
+  "adaWallet": {
+    "cwAccountsNumber": 1,
+    "cwAmount": {
+      "getCCoin": "1000000"
+    },
+    "cwId": "1",
+    "cwMeta": {
+      "cwAssurance": "CWANormal",
+      "cwName": "TEST-ADA",
+      "cwUnit": 0
+    },
+    "cwPassphraseLU": "2018-10-26T18:26:43+09:00"
+  },
+  "masterKey": "master private Key"
+}
+```
+
+After:
+```
+ACCOUNT = {
+"account": 0,
+"root_cached_key": "master public key from Trezor device",
+"derivation_scheme": "V2"
+}
+```
+```
+LAST_BLOCK_NUMBER = "last_block_number"
+```
+```
+WALLET = {
+  "adaWallet": {
+    "cwAccountsNumber": 1,
+    "cwAmount": {
+      "getCCoin": "1000000"
+    },
+    "cwId": "1",
+    "cwMeta": {
+      "cwAssurance": "CWANormal",
+      "cwName": "TEST-ADA",
+      "cwUnit": 0
+    },
+    "cwType": "CWTHardware",
+    "cwHardwareInfo": {
+      "vendor": "trezor.io",
+      "deviceId": "device id",
+      "label": "device label",
+      "language": "english",
+      "majorVersion": 2,
+      "minorVersion": 0,
+      "patchVersion": 8,
+      "model": "T",
+      "publicMasterKey": "master public key"
+    }
+  }
+}
+```
+
+* app/domain/Wallet.js `Wallet` changes
+
+```
+  id: string = '';
+  address: string = 'current address';
+new-> type : WalletType = WalletTypeOption.WEB_WALLET;
+new-> hardwareInfo : ?WalletHardwareInfo;
+  @observable name: string = '';
+  @observable amount: BigNumber;
+  @observable assurance: AssuranceModeOption;
+  @observable passwordUpdateDate: ?Date;
+```
+
+```
+app/types/WalletTypes.js
+// @flow
+export type WalletType = 'CWTWeb' | 'CWTHardware';
+
+export type WalletHardwareInfo = {
+  vendor : string,
+  model: string,
+  deviceId: string,
+  label: string,
+  majorVersion: number,
+  minorVersion: number,
+  patchVersion: number,
+  language: string,
+  publicMasterKey: string,
+};
+```
+
+* other changes, we need to change following modules similar to `restoreWallet` implementation. 
+```
+app/action => Action for Connect to Trezor
+```
+```
+app/store => Pass Action from View to API
+```
+```
+app/containers => View containers(dialog)
+```
+```
+app/components => View base components
+```
+```
+chrome => add static files(js/html) needed for Trezor connection
+```
+```
+chrome/manifest.[ENV].json => Add permission to allow Trezor Connect API and load static files needed for Trezor connection
+```
+```
+scripts => change build script to move static files(js/html) needed for Trezor connection to build directory
+```
+
+* getting public key from Trezor Wallet(sequence diagram).  
+![trezort-getpublickey-sequence](https://user-images.githubusercontent.com/19986226/51812399-b07f2d00-22f4-11e9-8c5f-00b673d11840.jpg)
+
+### Send ADA using Trezor Sign Transaction
+[TODO]
+
+# Iteration-2
+TBD
+
+# Reference
+1. https://github.com/trezor/connect
+2. https://github.com/trezor/trezor-core
+3. https://github.com/trezor/trezord-go
+4. https://doc.satoshilabs.com/
