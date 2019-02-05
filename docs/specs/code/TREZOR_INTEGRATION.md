@@ -7,12 +7,12 @@ An user would be able to use a Trezor Hardware Wallet with Yoroi.
 
 # Background
 
+# Iteration-1
+
 # Proposal
 User will be able to:
 1. Setup a new Yoroi Wallet without exposing its private key/ mnemonics in a computer.
 2. Send ADA using the Trezor Wallet Security.
-
-# Iteration-1
 
 ## Prerequisite
 1. Trezor Model T - Version 2.0.8 or later. (Support for Trezor One is supposed to come by mid-next year according to some information in Reddit).
@@ -30,8 +30,19 @@ User will be able to:
 3. Approve the transaction on the Trezor device.
 
 ## Low Level Implementation Design
+We will use [TrezorConnect](https://github.com/trezor/connect) API for integration.<br/>
+For setup:
+- PART1: add npm module using `npm -i trezor-connect`
+- PART2: manual setup using [this](https://github.com/trezor/connect/tree/develop/src/js/webextension) and final build should have structure similar to [this](https://github.com/trezor/connect-explorer/tree/webextensions) **(We have to do these step every time when upgradting major TrezorConnect API version)**
+
+We will use following TrezorConnect API:
+- For Trezor Integrated Wallet Creation: [TrezorConnect.cardanoGetPublicKey(params)](https://github.com/trezor/connect/blob/develop/docs/methods/cardanoGetPublicKey.md)
+- For Send ADA using Trezor Sign Transaction: [TrezorConnect.cardanoSignTransaction(params)](https://github.com/trezor/connect/blob/develop/docs/methods/cardanoSignTransaction.md)
 
 ### Trezor Integrated Wallet Creation
+* getting public key from Trezor Wallet(sequence diagram).<br/>
+![trezort-getpublickey-sequence](https://user-images.githubusercontent.com/19986226/51812399-b07f2d00-22f4-11e9-8c5f-00b673d11840.jpg)
+
 * For a Yoroi Wallet, we need to create: `adaWallet` and `cryptoAccount` objects.<br/>
 `adaWallet`     = no change on how we were using it before  
 `cryptoAccount` = we need to create it manually, because to create it with rust-cardano we would need the master private key, which we don’t have. This object is created in the following way:
@@ -169,9 +180,6 @@ chrome/manifest.[ENV].json => Add permission to allow Trezor Connect API and loa
 scripts => change build script to move static files(js/html) needed for Trezor connection to build directory
 ```
 
-* getting public key from Trezor Wallet(sequence diagram).  
-![trezort-getpublickey-sequence](https://user-images.githubusercontent.com/19986226/51812399-b07f2d00-22f4-11e9-8c5f-00b673d11840.jpg)
-
 ### Send ADA using Trezor Sign Transaction
 [TODO]
 
@@ -183,3 +191,4 @@ TBD
 2. https://github.com/trezor/trezor-core
 3. https://github.com/trezor/trezord-go
 4. https://doc.satoshilabs.com/
+5. https://trezor.github.io/connect-explorer/#/
