@@ -33,7 +33,7 @@ User will be able to:
 We will use [TrezorConnect](https://github.com/trezor/connect) API for integration.<br/>
 For setup:
 - PART1: add npm module using `npm -i trezor-connect`
-- PART2: manual setup using [this](https://github.com/trezor/connect/tree/develop/src/js/webextension) and final build should have structure similar to [this](https://github.com/trezor/connect-explorer/tree/webextensions) **(We have to do these step every time when upgradting major TrezorConnect API version)**
+- PART2: manual setup using [this](https://github.com/trezor/connect/tree/develop/src/js/webextension) and final build should have structure similar to [this](https://github.com/trezor/connect-explorer/tree/webextensions) **(We have to do these step every time when upgrading major TrezorConnect API version)**
 
 We will use following TrezorConnect API:
 - For Trezor Integrated Wallet Creation: [TrezorConnect.cardanoGetPublicKey(params)](https://github.com/trezor/connect/blob/develop/docs/methods/cardanoGetPublicKey.md)
